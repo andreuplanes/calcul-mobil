@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Càlcul">
 <meta name="theme-color" content="#1f3a2e"><meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
-<title>Càlcul Mòbil · v1.2</title>
+<title>Càlcul Mòbil · v1.3</title>
 <!-- ═══════════════════════════════════════════════════════════════════════════
-  PANELL · CÀLCUL MÒBIL · v1.2 (13/10/2026) · ENTRADA
+  PANELL · CÀLCUL MÒBIL · v1.3 (13/10/2026) · ENTRADA
   · El Càlcul de Baranes del PANELL a l'iPhone, per a CÀLCULS PROVISIONALS a peu d'obra (Andreu, 13/10/2026).
   · PRIVAT: aquesta pàgina (pública a GitHub) NO porta el Càlcul. Després de connectar amb Dropbox (compte de l'Andreu), LLEGEIX el Càlcul
     de PATRIMONI del PANELL (/PANELL/apps/baranes/_estables/baranes_calcul.html) i l'obre aquí, adaptat al mòbil. Sempre és la mateixa
@@ -20,6 +20,7 @@
   · Dropbox: la mateixa app que la Tresoreria Mòbil («PANELL Tresoreria Andreu», ntd7gdp1oqu7whl) i el mateix testimoni (tm.token).
   HISTÒRIA
     v1.0 (13/10/2026) — Primera versió.
+    v1.3 (13/10/2026) — El nom del projecte «📁 CALCULS PROVISIONALS» es veu a la barra.
     v1.2 (13/10/2026) — Idiomes de l'informe lliures (també es pot treure el català o el castellà) · 👁 Portada amb ✕ Tancar visible.
     v1.1 (13/10/2026) — Informe: 👁 veure el complet o 📤 enviar la primera valoració (portada + resum de dades), amb idiomes a triar.
 ═══════════════════════════════════════════════════════════════════════════ -->
@@ -246,6 +247,7 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
     var t = document.createElement('div'); t.id = 'tm-tabs';
     t.innerHTML = '<button data-s="cfg">Dades</button><button data-s="mid">Esquema</button><button data-s="res">Resultats</button>';
     h.insertBefore(t, h.firstChild);
+    var pj = document.createElement('span'); pj.id = 'tm-proj'; pj.title = 'Projecte (al mòbil sempre és aquest)'; pj.textContent = '📁 ' + window.TM_PROJECTE; h.insertBefore(pj, t.nextSibling);
     var mostra = function(id){ ['cfg', 'mid', 'res'].forEach(function(x){ var s = document.getElementById(x); if(s) s.classList.toggle('tm-on', x === id); });
       [].forEach.call(t.children, function(b){ b.classList.toggle('on', b.getAttribute('data-s') === id); });
       try{ localStorage.setItem('cm.pestanya', id); }catch(e){}
@@ -307,9 +309,11 @@ main > section.tm-on{ display:block; }
 #prevPortada > div:first-child button{ font-size:14px !important; padding:7px 10px !important; }
 #prevPortadaTanca{ order:-1; background:#b42318 !important; color:#fff !important; border-color:#b42318 !important; font-weight:700 !important; }
 #prevPortadaCos{ overflow:auto !important; -webkit-overflow-scrolling:touch; justify-content:safe center !important; }
+/* v1.3 · nom del projecte, fix i sempre a la vista */
+#tm-proj{ flex:none; align-self:center; white-space:nowrap; font:700 13px system-ui,Arial,sans-serif; color:#2f5d46; background:#eef5f0; border:1px solid #2f5d46; border-radius:8px; padding:6px 10px; margin:0 6px; }
 </script>
 <script>
-var APP_VERSION='v1.2';
+var APP_VERSION='v1.3';
 var APP_KEY_DEFECTE='ntd7gdp1oqu7whl', ARREL_DEFECTE='/PANELL', USUARIS_PERMESOS=['andreuplanes@gmail.com'];
 var CAMI_APP='apps/baranes/_estables/baranes_calcul.html';
 function $(id){ return document.getElementById(id); }
