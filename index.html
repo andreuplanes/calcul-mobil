@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Càlcul">
+<meta name="theme-color" content="#1f3a2e"><meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
+<title>Càlcul Mòbil · v1.1</title>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+  PANELL · CÀLCUL MÒBIL · v1.1 (13/10/2026) · ENTRADA
+  · El Càlcul de Baranes del PANELL a l'iPhone, per a CÀLCULS PROVISIONALS a peu d'obra (Andreu, 13/10/2026).
+  · PRIVAT: aquesta pàgina (pública a GitHub) NO porta el Càlcul. Després de connectar amb Dropbox (compte de l'Andreu), LLEGEIX el Càlcul
+    de PATRIMONI del PANELL (/PANELL/apps/baranes/_estables/baranes_calcul.html) i l'obre aquí, adaptat al mòbil. Sempre és la mateixa
+    versió que l'ordinador i no cal pujar res a GitHub quan el Càlcul canvia.
+  · Adaptació (en obrir): el disc del PANELL → Dropbox (capa «shim», imitació de l'API de carpetes del navegador), projecte fix
+    «CALCULS PROVISIONALS», informes que s'obren o s'envien sense arxivar-los, 🗄 Arxivar (a CALCUL/antics/), ⏎ Tancar torna aquí,
+    pantalla per al mòbil. Si el Càlcul canvia tant que l'adaptació no hi encaixa, s'avisa i no s'obre (mai a mitges).
+  · Dropbox: la mateixa app que la Tresoreria Mòbil («PANELL Tresoreria Andreu», ntd7gdp1oqu7whl) i el mateix testimoni (tm.token).
+  HISTÒRIA
+    v1.0 (13/10/2026) — Primera versió.
+    v1.1 (13/10/2026) — Informe: 👁 veure el complet o 📤 enviar la primera valoració (portada + resum de dades), amb idiomes a triar.
+═══════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{ --ink:#1b2431; --muted:#647089; --accent:#2f5d46; --neg:#b3382f; }
+*{box-sizing:border-box} html,body{margin:0; min-height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:#1f3a2e; color:var(--ink); display:flex; align-items:center; justify-content:center; min-height:100vh; padding:calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+.caixa{background:#fff; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,.3); padding:20px 22px 16px; width:100%; max-width:560px}
+h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{margin:8px 0 14px; color:var(--muted); font-size:14px}
+.btn{border:1px solid #cbd4e1; background:#fff; color:var(--ink); padding:10px 16px; border-radius:9px; font-size:15px; font-weight:650; cursor:pointer}
+.btn.primary{background:var(--accent); color:#fff; border-color:var(--accent)}
+.btn.ghost{border-color:transparent; background:transparent; color:var(--muted)}
+.gran{display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; padding:20px 10px; border-radius:12px; background:var(--accent); color:#fff; border:0; font-weight:800; font-size:19px; letter-spacing:.3px; cursor:pointer; margin:12px 0 6px}
+.gran span{font-weight:500; font-size:12.5px; opacity:.85; letter-spacing:0}
+.peu{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:12px; flex-wrap:wrap}
+.pant{display:none} .pant.on{display:block}
+.field{margin:10px 0} .field label{display:block; font-size:12px; font-weight:650; color:var(--muted); margin-bottom:4px}
+.field input{width:100%; font-size:16px; padding:9px 10px; border:1px solid #cbd4e1; border-radius:8px}
+.err{color:var(--neg); font-size:13px; min-height:16px}
+</style>
+</head>
+<body>
+<div class="caixa">
+  <div style="display:flex; align-items:center; gap:10px"><img src="icon.png" alt="" style="width:44px;height:44px;border-radius:10px">
+    <div><h1>Càlcul Mòbil</h1><div class="sub" id="eVer"></div></div></div>
+  <div class="pant" id="pConnecta">
+    <p>Connecta aquest aparell amb el teu Dropbox (només el primer cop). Només s'hi pot connectar el compte <b>andreuplanes@gmail.com</b>.</p>
+    <div class="peu"><button class="btn ghost" data-cfg>⚙ Configuració</button><button class="btn primary" id="bEntra">Connectar amb Dropbox</button></div>
+  </div>
+  <div class="pant" id="pObre">
+    <p style="margin-bottom:0">Càlculs de baranes a peu d'obra. Es desen al projecte <b>CALCULS PROVISIONALS</b>; a l'ordinador decidiràs què en fas.</p>
+    <button class="gran" id="bObre">🧮 OBRIR EL CÀLCUL<span id="eCalc">el del PANELL (patrimoni)</span></button>
+    <div class="peu"><span class="sub" id="eCompte"></span><button class="btn ghost" data-cfg>⚙</button></div>
+  </div>
+  <div class="pant" id="pCfg">
+    <div class="field"><label>Clau de l'app de Dropbox («App key»)</label><input id="cClau" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <div class="field"><label>Carpeta del PANELL a Dropbox</label><input id="cArrel" autocapitalize="off" autocorrect="off"></div>
+    <p class="sub" id="cInfo"></p>
+    <div class="peu"><button class="btn ghost" id="cSurt" style="color:var(--neg)">Desconnectar Dropbox</button><span><button class="btn" id="cTorna">Tornar</button> <button class="btn primary" id="cDesa">Desar</button></span></div>
+  </div>
+  <div class="err" id="eErr"></div>
+</div>
+<script id="tm-shim" type="text/plain">/*==== PANELL MÒBIL · CÀLCUL · capa de Dropbox (injectada per l'entrada del Càlcul Mòbil; l'app és la del PANELL tal qual) ====
+   · El «disc» del PANELL és una imitació de l'API de carpetes del navegador (FileSystemDirectoryHandle) feta sobre Dropbox:
+     getDirectoryHandle / getFileHandle / getFile / createWritable / removeEntry / values. Així el nucli i l'app hi treballen sense
+     saber-ho. Escriure: amb «update: rev» quan el fitxer s'ha llegit (si un altre aparell hi ha desat, NO es trepitja: avís i recàrrega).
+   · Projecte fix: «CALCULS PROVISIONALS». Informes: NO s'arxiven a la carpeta; s'obren o es comparteixen.
+   · 🗄 Arxivar: els càlculs provisionals que ja no calen passen a CALCUL/antics/ (no s'esborra res). */
+(function(){
+  function lsGet(k, d){ try{ var v = localStorage.getItem(k); return v == null ? d : v; }catch(e){ return d; } }
+  function lsSet(k, v){ try{ if(v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){} }
+  var D = window.TMDBX = { clau:lsGet('tm.clau', 'ntd7gdp1oqu7whl') || 'ntd7gdp1oqu7whl', arrel:(lsGet('tm.arrel', '/PANELL') || '/PANELL').replace(/\/+$/, ''), token:{access:null, refresh:null, exp:0} };
+  try{ D.token = JSON.parse(lsGet('tm.token', 'null')) || D.token; }catch(e){}
+  window.TM_PROJECTE = 'CALCULS PROVISIONALS';
+  /* dins del marc no hi ha adreça: el Càlcul llegeix ?projecte=…&calcul=… d'aquí (el projecte sempre és el de càlculs provisionals) */
+  (function(){ var q; try{ q = new URLSearchParams(sessionStorage.getItem('cm.search') || ''); }catch(e){ q = new URLSearchParams(''); }
+    q.set('projecte', window.TM_PROJECTE); window.TM_SEARCH = '?' + q.toString(); })();
+  D.navega = function(cerca){ var q = new URLSearchParams(cerca); q.set('projecte', window.TM_PROJECTE); try{ sessionStorage.setItem('cm.search', '?' + q.toString()); }catch(e){} location.reload(); };
+  D.tanca = function(){ try{ if(window.parent !== window && window.parent.TM_TANCA){ window.parent.TM_TANCA(); return; } }catch(e){} location.replace('./'); };
+  function desaToken(){ lsSet('tm.token', JSON.stringify(D.token)); }
+  D.accessToken = function(){
+    if(D.token.access && Date.now() < D.token.exp) return Promise.resolve(D.token.access);
+    if(!D.token.refresh) return Promise.reject(new Error('cal tornar a connectar amb Dropbox'));
+    return fetch('https://api.dropboxapi.com/oauth2/token', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({ grant_type:'refresh_token', refresh_token:D.token.refresh, client_id:D.clau }) })
+      .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error_description || j.error || ('HTTP ' + r.status));
+        D.token.access = j.access_token; D.token.exp = Date.now() + (j.expires_in || 14400) * 1000 - 60000; desaToken(); return D.token.access; }); });
+  };
+  function err(fn, r){ return r.text().then(function(t){ var e = new Error(fn + ': HTTP ' + r.status + ' ' + t.slice(0, 200)); e.status = r.status; e.cos = t; throw e; }); }
+  function arg(o){ return JSON.stringify(o).replace(/[\u007f-￿]/g, function(c){ return '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4); }); }
+  D.rpc = function(fn, a, re){
+    return D.accessToken().then(function(t){ return fetch('https://api.dropboxapi.com/2/' + fn, { method:'POST', headers:{ Authorization:'Bearer ' + t, 'Content-Type':'application/json' }, body:JSON.stringify(a == null ? null : a) }); })
+      .then(function(r){ if(r.status === 401 && !re){ D.token.access = null; return D.rpc(fn, a, true); } if(!r.ok) return err(fn, r); return r.json(); });
+  };
+  D.baixa = function(path, re){
+    return D.accessToken().then(function(t){ return fetch('https://content.dropboxapi.com/2/files/download', { method:'POST', headers:{ Authorization:'Bearer ' + t, 'Dropbox-API-Arg':arg({ path:path }) } }); })
+      .then(function(r){ if(r.status === 401 && !re){ D.token.access = null; return D.baixa(path, true); } if(!r.ok) return err('download', r); return r.arrayBuffer(); });
+  };
+  D.puja = function(path, body, mode, re){
+    return D.accessToken().then(function(t){ return fetch('https://content.dropboxapi.com/2/files/upload', { method:'POST', headers:{ Authorization:'Bearer ' + t,
+      'Content-Type':'application/octet-stream', 'Dropbox-API-Arg':arg({ path:path, mode:mode, autorename:false, mute:true, strict_conflict:true }) }, body:new Blob([body]) }); })
+      .then(function(r){ if(r.status === 401 && !re){ D.token.access = null; return D.puja(path, body, mode, true); } if(!r.ok) return err('upload', r); return r.json(); });
+  };
+  /* ── el «disc»: carpetes i fitxers sobre Dropbox ── */
+  var MD = {}, TXT = {};   /* metadades i contingut (per rev) */
+  function md(p){ var k = p.toLowerCase(); if(MD[k] !== undefined) return Promise.resolve(MD[k]);
+    return D.rpc('files/get_metadata', { path:p }).then(function(m){ MD[k] = m; return m; }, function(e){ if(e && e.status === 409){ MD[k] = null; return null; } throw e; }); }
+  function oblida(p){ delete MD[p.toLowerCase()]; }
+  function noTrobat(p){ var e = new Error("No s'ha trobat: " + p); e.name = 'NotFoundError'; return e; }
+  function uneix(a, b){ return a.replace(/\/+$/, '') + '/' + b; }
+  function Dir(path, name){ this.kind = 'directory'; this.name = name; this.path = path; }
+  function Fit(path, name){ this.kind = 'file'; this.name = name; this.path = path; }
+  Dir.prototype.queryPermission = Dir.prototype.requestPermission = function(){ return Promise.resolve('granted'); };
+  Fit.prototype.queryPermission = Fit.prototype.requestPermission = Dir.prototype.queryPermission;
+  Dir.prototype.isSameEntry = Fit.prototype.isSameEntry = function(o){ return Promise.resolve(!!o && o.path && o.path.toLowerCase() === this.path.toLowerCase()); };
+  Dir.prototype.getDirectoryHandle = function(nom, o){ var p = uneix(this.path, nom), crea = !!(o && o.create);
+    return md(p).then(function(m){
+      if(m && m['.tag'] === 'folder') return new Dir(p, nom);
+      if(m){ var e = new Error('no és una carpeta: ' + p); e.name = 'TypeMismatchError'; throw e; }
+      if(!crea) throw noTrobat(p);
+      return D.rpc('files/create_folder_v2', { path:p, autorename:false }).catch(function(e){ if(!(e && e.status === 409)) throw e; })
+        .then(function(){ MD[p.toLowerCase()] = { '.tag':'folder', path_display:p }; return new Dir(p, nom); });
+    }); };
+  Dir.prototype.getFileHandle = function(nom, o){ var p = uneix(this.path, nom), crea = !!(o && o.create);
+    return md(p).then(function(m){
+      if(m && m['.tag'] === 'file') return new Fit(p, nom);
+      if(m){ var e = new Error('és una carpeta: ' + p); e.name = 'TypeMismatchError'; throw e; }
+      if(!crea) throw noTrobat(p);
+      return new Fit(p, nom);
+    }); };
+  Dir.prototype.removeEntry = function(nom){ var p = uneix(this.path, nom);
+    return D.rpc('files/delete_v2', { path:p }).then(function(){ oblida(p); }, function(e){ if(e && e.status === 409) throw noTrobat(p); throw e; }); };
+  Dir.prototype._llista = function(){ var self = this, out = [];
+    function seg(j){ (j.entries || []).forEach(function(e){ MD[e.path_lower] = e; out.push(e['.tag'] === 'folder' ? new Dir(e.path_display, e.name) : new Fit(e.path_display, e.name)); });
+      return j.has_more ? D.rpc('files/list_folder/continue', { cursor:j.cursor }).then(seg) : out; }
+    return D.rpc('files/list_folder', { path:self.path, recursive:false, limit:2000 }).then(seg); };
+  function iter(dir, f){ var ll = null, i = 0; return { next:function(){ return (ll ? Promise.resolve(ll) : dir._llista().then(function(x){ ll = x; return x; })).then(function(x){ return i < x.length ? { value:f(x[i++]), done:false } : { value:undefined, done:true }; }); }, [Symbol.asyncIterator]:function(){ return this; } }; }
+  Dir.prototype.values = function(){ return iter(this, function(h){ return h; }); };
+  Dir.prototype.keys = function(){ return iter(this, function(h){ return h.name; }); };
+  Dir.prototype.entries = function(){ return iter(this, function(h){ return [h.name, h]; }); };
+  Dir.prototype[Symbol.asyncIterator] = Dir.prototype.entries;
+  Fit.prototype.getFile = function(){ var p = this.path, nom = this.name;
+    return md(p).then(function(m){
+      if(!m || m['.tag'] !== 'file') throw noTrobat(p);
+      var k = p.toLowerCase(), carrega = function(){ if(TXT[k] && TXT[k].rev === m.rev) return Promise.resolve(TXT[k].buf);
+        return D.baixa('rev:' + m.rev).then(function(b){ TXT[k] = { rev:m.rev, buf:b }; return b; }); };
+      return { name:nom, size:m.size, lastModified:Date.parse(m.server_modified), type:/\.json$/i.test(nom) ? 'application/json' : '',
+        text:function(){ return carrega().then(function(b){ return new TextDecoder().decode(b); }); },
+        arrayBuffer:function(){ return carrega(); },
+        slice:function(){ var self = this; return { text:function(){ return self.text(); }, arrayBuffer:function(){ return self.arrayBuffer(); } }; } };
+    }); };
+  var avisat = false;
+  function conflicte(p){
+    var e = new Error("el fitxer ha canviat en un altre aparell (no s'ha trepitjat)"); e.name = 'InvalidStateError'; e.conflicte = true;
+    if(!avisat){ avisat = true; setTimeout(function(){
+      if(confirm("⚠ No s'ha desat: mentrestant s'ha desat aquest fitxer des d'un altre aparell.\nNo s'ha trepitjat res.\n\nTornar a carregar ara?")){ try{ window.PANELL && (window.PANELL._sortint = true); }catch(x){} location.reload(); } else avisat = false; }, 50); }
+    return e;
+  }
+  Fit.prototype.createWritable = function(){ var p = this.path, trossos = [];
+    return Promise.resolve({
+      write:function(d){ if(d && typeof d === 'object' && d.type === 'write') d = d.data; trossos.push(d); return Promise.resolve(); },
+      truncate:function(){ return Promise.resolve(); }, abort:function(){ trossos = []; return Promise.resolve(); },
+      close:function(){ var k = p.toLowerCase(), m = MD[k];
+        var mode = (m && m['.tag'] === 'file' && m.rev) ? { '.tag':'update', update:m.rev } : { '.tag':'add' };
+        return D.puja(p, new Blob(trossos), mode).then(function(r){ r['.tag'] = 'file'; MD[k] = r; delete TXT[k]; },
+          function(e){ if(e && e.status === 409 && /conflict/i.test(e.cos || '')) throw conflicte(p); throw e; }); }
+    }); };
+  window.TMROOT = new Dir(D.arrel, 'PANELL');
+  window.showDirectoryPicker = function(){ return Promise.resolve(window.TMROOT); };
+  /* ── informe (v1.1, Andreu): al mòbil es pot VEURE el complet («Tot») i s'ENVIA la primera valoració
+       («Estudi de càlculs»: portada + resum de dades al dors, 2 fulls), amb els idiomes triats. Res s'arxiva. ── */
+  D.modeInforme = 'envia';
+  D.opcionsInforme = function(k){ var NOMS_IDIOMA = k.noms;
+    var N = DB.norms[S.norm] || {}, fixos = ['ca', N.lang || 'ca'], tots = ['ca','es','fr','en','it','de','pt'];
+    var c = document.createElement('div'); c.className = 'tm-full';
+    c.innerHTML = '<div class="tm-caixa"><b>📄 Informe</b>' +
+      '<div class="tm-sub">Idiomes · sempre: ' + fixos.filter(function(l, k){ return fixos.indexOf(l) === k; }).map(function(l){ return NOMS_IDIOMA[l]; }).join(' + ') + '. Afegeix-ne si cal:</div><div class="tm-idiomes">' +
+      tots.map(function(l){ var fix = fixos.indexOf(l) >= 0, on = fix || (S.idiomesExtra || []).indexOf(l) >= 0;
+        return '<label><input type="checkbox" data-l="' + l + '"' + (on ? ' checked' : '') + (fix ? ' disabled' : '') + '> ' + NOMS_IDIOMA[l] + '</label>'; }).join('') + '</div>' +
+      '<div class="tm-botons tm-col"><button data-a="envia" class="tm-prin">📤 Enviar la primera valoració<br><small>estudi de càlculs · portada + resum de dades (2 fulls)</small></button>' +
+      '<button data-a="veu">👁 Veure l\'informe complet<br><small>tot: estudi del vidre + càlculs + informe general + annex</small></button>' +
+      '<button data-a="tanca">Cancel·lar</button></div></div>';
+    document.body.appendChild(c);
+    c.addEventListener('click', function(ev){ var b = ev.target.closest && ev.target.closest('button'); var a = b && b.getAttribute('data-a'); if(!a) return;
+      if(a === 'tanca'){ c.remove(); return; }
+      S.idiomesExtra = [].slice.call(c.querySelectorAll('input[data-l]')).filter(function(x){ return x.checked && !x.disabled; }).map(function(x){ return x.getAttribute('data-l'); });
+      c.remove(); D.modeInforme = a;
+      var tip = a === 'envia' ? 'calculs' : 'tot', abans = S.tipusInforme || 'tot';
+      k.aplica(tip);
+      if(k.brut) k.brut();
+      Promise.resolve(k.genera()).catch(function(e){ alert('⚠ No s\'ha pogut fer l\'informe: ' + (e && e.message || e)); })
+        .then(function(){ k.aplica(abans); });
+    });
+  };
+  D.informe = function(nom, bytes){
+    var envia = D.modeInforme !== 'veu';
+    var f = new File([bytes], nom, { type:'application/pdf' }), u = URL.createObjectURL(f);
+    var potEnviar = !!(navigator.canShare && navigator.canShare({ files:[f] }));
+    var c = document.createElement('div'); c.className = 'tm-full';
+    c.innerHTML = '<div class="tm-caixa"><b>' + (envia ? '📤 Primera valoració preparada' : '👁 Informe complet preparat') + '</b><div class="tm-sub">' + nom.replace(/</g, '&lt;') + '</div>' +
+      '<div class="tm-sub">' + (envia ? 'Toca «Enviar» i tria WhatsApp, Correu…' : 'Només per mirar-lo al mòbil.') + ' No s\'arxiva a la carpeta.</div>' +
+      '<div class="tm-botons">' + (envia ? (potEnviar ? '<button data-a="comparteix" class="tm-prin">📤 Enviar…</button>' : '<a class="tm-prin" download="' + nom.replace(/"/g, '') + '" href="' + u + '">⬇ Desar</a>') + '<button data-a="obre">👁 Veure</button>'
+                                         : '<button data-a="obre" class="tm-prin">👁 Obrir</button>') + '<button data-a="tanca">Tancar</button></div></div>';
+    document.body.appendChild(c);
+    c.addEventListener('click', function(ev){ var a = ev.target.getAttribute && ev.target.getAttribute('data-a'); if(!a) return;
+      if(a === 'obre') window.open(u, '_blank');
+      else if(a === 'comparteix') navigator.share({ files:[f], title:nom }).catch(function(){});
+      else c.remove(); });
+  };
+  /* ── 🗄 Arxivar càlculs provisionals ── */
+  D.arxiva = function(){
+    var dir = uneix(uneix(uneix(uneix(D.arrel, 'projectes'), '_baranes'), window.TM_PROJECTE), 'CALCUL'), cap = window.TM_PROJECTE + '_calcul';
+    var actual = ''; try{ var sc = document.getElementById('selCalcul'); actual = sc && sc.value ? decodeURIComponent(sc.value) : ((typeof calculActual !== 'undefined' && calculActual) || ''); }catch(e){}
+    actual = String(actual || '').toUpperCase();
+    var c = document.createElement('div'); c.className = 'tm-full'; c.innerHTML = '<div class="tm-caixa"><b>🗄 Arxivar càlculs provisionals</b><div class="tm-sub">Llegint…</div></div>'; document.body.appendChild(c);
+    new Dir(dir, 'CALCUL')._llista().then(function(ll){
+      var g = {};
+      ll.forEach(function(h){ if(h.kind !== 'file' || h.name.indexOf(cap) !== 0) return; var base = h.name.replace(/\.bak$/i, ''); if(!/\.json$/i.test(base)) return;
+        (g[base] = g[base] || { base:base, fitxers:[], quan:0 }).fitxers.push(h); var m = MD[h.path.toLowerCase()]; if(m && !/\.bak$/i.test(h.name)) g[base].quan = Date.parse(m.server_modified); });
+      var ws = Object.keys(g).map(function(k){ return g[k]; }).sort(function(a, b){ return b.quan - a.quan; });
+      var slugDe = function(b){ var m = b.slice(cap.length).replace(/(_rev)?\.json$/i, ''); return m.replace(/^__/, ''); };
+      var h = '<div class="tm-caixa"><b>🗄 Arxivar càlculs provisionals</b><div class="tm-sub">Els marcats passen a <i>CALCUL/antics/</i>: desapareixen de la llista però no s\'esborren (a l\'ordinador els pots recuperar).</div><div class="tm-llista">';
+      if(!ws.length) h += '<div class="tm-sub">Encara no hi ha cap càlcul desat.</div>';
+      ws.forEach(function(w, i){ var s = slugDe(w.base), es = (s || '').toUpperCase() === actual;
+        h += '<label class="tm-fila' + (es ? ' tm-off' : '') + '"><input type="checkbox" data-i="' + i + '"' + (es ? ' disabled' : '') + '> <span><b>' + (s || '(sense nom)') + '</b>' + (es ? ' · <i>és el que tens obert</i>' : '') + '</span><span class="tm-sub">' + (w.quan ? new Date(w.quan).toLocaleString('ca-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '') + '</span></label>'; });
+      h += '</div><div class="tm-botons"><button data-a="tanca">Tancar</button><button data-a="arxiva" class="tm-prin">Arxivar els marcats</button></div></div>';
+      c.innerHTML = h;
+      c.onclick = function(ev){ var a = ev.target.getAttribute && ev.target.getAttribute('data-a'); if(!a) return; if(a === 'tanca'){ c.remove(); return; }
+        var sel = [].slice.call(c.querySelectorAll('input:checked')).map(function(x){ return ws[+x.getAttribute('data-i')]; }); if(!sel.length){ c.remove(); return; }
+        var fs = []; sel.forEach(function(w){ fs = fs.concat(w.fitxers); });
+        c.querySelector('.tm-botons').innerHTML = '<span class="tm-sub">Arxivant…</span>';
+        var p = Promise.resolve(); fs.forEach(function(f){ p = p.then(function(){ return D.rpc('files/move_v2', { from_path:f.path, to_path:uneix(uneix(dir, 'antics'), f.name), autorename:true }).then(function(){ oblida(f.path); }); }); });
+        p.then(function(){ c.remove(); alert(sel.length + ' càlcul' + (sel.length > 1 ? 's arxivats' : ' arxivat') + ' a CALCUL/antics/');
+          var P = window.PANELL; Promise.resolve(P && P.brut && P.brut() ? P.desa({ auto:true }) : true).then(function(){ location.reload(); }); },
+          function(e){ alert('⚠ No s\'ha pogut arxivar: ' + e.message); c.remove(); }); };
+    }, function(e){ c.querySelector('.tm-sub').textContent = e && e.status === 409 ? 'Encara no hi ha cap càlcul desat.' : ('⚠ ' + e.message); c.onclick = function(){ c.remove(); }; });
+  };
+  /* ── pestanyes del mòbil: Dades · Esquema · Resultats (les tres columnes de l'ordinador, d'una en una) ── */
+  (function posaPestanyes(){ var h = document.querySelector('header'), m = document.querySelector('main'); if(!h || !m || !document.getElementById('cfg')){ return setTimeout(posaPestanyes, 200); }
+    if(document.getElementById('tm-tabs')) return;
+    var t = document.createElement('div'); t.id = 'tm-tabs';
+    t.innerHTML = '<button data-s="cfg">Dades</button><button data-s="mid">Esquema</button><button data-s="res">Resultats</button>';
+    h.insertBefore(t, h.firstChild);
+    var mostra = function(id){ ['cfg', 'mid', 'res'].forEach(function(x){ var s = document.getElementById(x); if(s) s.classList.toggle('tm-on', x === id); });
+      [].forEach.call(t.children, function(b){ b.classList.toggle('on', b.getAttribute('data-s') === id); });
+      try{ localStorage.setItem('cm.pestanya', id); }catch(e){}
+      setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 30); };
+    t.onclick = function(e){ var s = e.target.getAttribute && e.target.getAttribute('data-s'); if(s) mostra(s); };
+    var ajusta = function(){ document.documentElement.style.setProperty('--tmhcap', h.offsetHeight + 'px'); };
+    window.addEventListener('resize', ajusta); ajusta();
+    var ini = 'cfg'; try{ ini = localStorage.getItem('cm.pestanya') || 'cfg'; }catch(e){}
+    mostra(ini);
+  })();
+  (function posaBoto(){ var b = document.querySelector('.panbar') || document.getElementById('pn-barra'); if(!b){ return setTimeout(posaBoto, 300); }
+    if(document.getElementById('tm-arxiva')) return; var x = document.createElement('button'); x.id = 'tm-arxiva'; x.className = 'pn-b'; x.textContent = '🗄 Arxivar'; x.title = 'Arxivar càlculs provisionals que ja no calen';
+    x.onclick = D.arxiva; (document.getElementById('pn-barra') || b).appendChild(x); })();
+})();
+</script>
+<script id="tm-css" type="text/plain">/* ═════ CÀLCUL MÒBIL · pantalla (només aquí; el Càlcul de l'ordinador no canvia) ═════
+   Al mòbil, les tres columnes de l'ordinador (Dades · Esquema · Resultats) es veuen d'una en una, a tota la pantalla, amb les
+   pestanyes de dalt. Capçalera d'una sola fila que llisca amb el dit; fora els botons que només tenen sentit a l'ordinador. */
+html{ -webkit-text-size-adjust:100%; }
+html, body{ overflow-x:hidden; }
+header{ padding:calc(4px + env(safe-area-inset-top)) 6px 4px !important; flex-wrap:nowrap !important; align-items:center !important; justify-content:flex-start !important;
+  overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; gap:6px !important; }
+header::-webkit-scrollbar{ display:none; }
+header h1, header .sub{ display:none !important; }
+.panbar{ flex-wrap:nowrap !important; flex:none; gap:5px !important; }
+.panbar input[type=text]{ width:150px !important; padding:6px 7px !important; }
+.panbar button{ padding:6px 8px !important; white-space:nowrap; }
+#nomProjecte, #btnDescarregar, #btnCarregarFitxer, #btnPerfils, #btnTornaPBR{ display:none !important; }
+#tm-tabs{ display:flex; flex:none; gap:0; border:1.5px solid var(--ink,#1d1d1b); border-radius:7px; overflow:hidden; }
+#tm-tabs button{ border:0; background:#fdfdfb; padding:7px 11px; font:600 12.5px var(--mono,monospace); cursor:pointer; white-space:nowrap; }
+#tm-tabs button + button{ border-left:1.5px solid var(--ink,#1d1d1b); }
+#tm-tabs button.on{ background:var(--ink,#1d1d1b); color:var(--paper,#fff); }
+main, main.vent, main.assaig, main.assaig.vent{ display:block !important; height:calc(100vh - var(--tmhcap,46px)) !important; }
+main > section{ display:none; height:100%; overflow-y:auto !important; -webkit-overflow-scrolling:touch; border:0 !important; padding:10px 12px !important; }
+main > section.tm-on{ display:block; }
+#tm-arxiva{ white-space:nowrap; }
+/* finestres pròpies del Càlcul Mòbil (informe, arxivar) */
+.tm-full{ position:fixed; inset:0; z-index:2147483004; background:rgba(15,20,30,.45); display:flex; align-items:center; justify-content:center; padding:10px; }
+.tm-caixa{ background:#fff; color:#1d2126; border-radius:12px; width:100%; max-width:560px; max-height:94vh; overflow:auto; padding:14px 16px; font:14px/1.45 -apple-system,system-ui,Arial,sans-serif; box-shadow:0 12px 40px rgba(0,0,0,.35); }
+.tm-sub{ color:#5b6070; font-size:12.5px; margin-top:4px; }
+.tm-llista{ margin:10px 0; border:1px solid #e3e6ec; border-radius:8px; }
+.tm-fila{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid #eef0f4; }
+.tm-fila:last-child{ border-bottom:0; } .tm-fila span:nth-child(2){ flex:1; } .tm-fila input{ width:20px; height:20px; } .tm-fila.tm-off{ opacity:.55; }
+.tm-botons{ display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.tm-botons button, .tm-botons a{ border:1px solid #cbd5e1; background:#f8fafc; color:#1d2126; border-radius:8px; padding:9px 14px; font:600 14px system-ui,Arial,sans-serif; text-decoration:none; cursor:pointer; }
+.tm-botons .tm-prin{ background:#2f5d46; border-color:#2f5d46; color:#fff; }
+/* v1.1 · opcions de l'informe */
+.tm-idiomes{ display:flex; flex-wrap:wrap; gap:6px 14px; margin:8px 0 4px; }
+.tm-idiomes label{ white-space:nowrap; font-size:15px; }
+.tm-idiomes input{ width:20px; height:20px; vertical-align:middle; }
+.tm-botons.tm-col{ flex-direction:column; align-items:stretch; }
+.tm-botons.tm-col button{ text-align:left; padding:11px 14px; }
+.tm-botons.tm-col small{ font-weight:400; opacity:.8; }
+</script>
+<script>
+var APP_VERSION='v1.1';
+var APP_KEY_DEFECTE='ntd7gdp1oqu7whl', ARREL_DEFECTE='/PANELL', USUARIS_PERMESOS=['andreuplanes@gmail.com'];
+var CAMI_APP='apps/baranes/_estables/baranes_calcul.html';
+function $(id){ return document.getElementById(id); }
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } }
+function lsSet(k,v){ try{ if(v==null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){} }
+var CFG={ clau:lsGet('tm.clau',APP_KEY_DEFECTE)||APP_KEY_DEFECTE, arrel:(lsGet('tm.arrel',ARREL_DEFECTE)||ARREL_DEFECTE).replace(/\/+$/,'') };
+var REDIRECT=location.origin+location.pathname, TOKEN={access:null,refresh:null,exp:0};
+try{ TOKEN=JSON.parse(lsGet('tm.token','null'))||TOKEN; }catch(e){}
+var DINS=new URLSearchParams(location.search).has('dins') || window.top!==window.self;
+var _de='pConnecta';
+function mostra(id){ document.querySelectorAll('.pant').forEach(function(p){ p.classList.toggle('on', p.id===id); }); }
+function b64url(buf){ var u=new Uint8Array(buf), s=''; for(var i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function entra(){
+  var verif=b64url(crypto.getRandomValues(new Uint8Array(48))); sessionStorage.setItem('cm.verif', verif);
+  crypto.subtle.digest('SHA-256', new TextEncoder().encode(verif)).then(function(h){
+    (window.top||window).location.href='https://www.dropbox.com/oauth2/authorize?client_id='+encodeURIComponent(CFG.clau)+'&response_type=code&code_challenge='+b64url(h)+'&code_challenge_method=S256&redirect_uri='+encodeURIComponent(REDIRECT)+'&token_access_type=offline'; });
+}
+function tokenPost(params){ return fetch('https://api.dropboxapi.com/oauth2/token',{ method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(params) })
+  .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error_description||j.error||('HTTP '+r.status)); return j; }); }); }
+function accessToken(){
+  if(TOKEN.access && Date.now()<TOKEN.exp) return Promise.resolve(TOKEN.access);
+  if(!TOKEN.refresh) return Promise.reject(new Error('cal connectar amb Dropbox'));
+  return tokenPost({ grant_type:'refresh_token', refresh_token:TOKEN.refresh, client_id:CFG.clau }).then(function(j){ TOKEN.access=j.access_token; TOKEN.exp=Date.now()+(j.expires_in||14400)*1000-60000; lsSet('tm.token',JSON.stringify(TOKEN)); return TOKEN.access; });
+}
+function rpc(fn,a){ return accessToken().then(function(t){ return fetch('https://api.dropboxapi.com/2/'+fn,{ method:'POST', headers:{ Authorization:'Bearer '+t, 'Content-Type':'application/json' }, body:JSON.stringify(a==null?null:a) }); })
+  .then(function(r){ if(!r.ok) return r.text().then(function(t){ var e=new Error(fn+': HTTP '+r.status+' '+t.slice(0,160)); e.status=r.status; throw e; }); return r.json(); }); }
+function baixa(path){ return accessToken().then(function(t){ return fetch('https://content.dropboxapi.com/2/files/download',{ method:'POST', headers:{ Authorization:'Bearer '+t, 'Dropbox-API-Arg':JSON.stringify({ path:path }) } }); })
+  .then(function(r){ if(!r.ok) throw new Error('download: HTTP '+r.status); return r.text(); }); }
+function desconnecta(){ TOKEN={access:null,refresh:null,exp:0}; lsSet('tm.token',null); lsSet('tm.compte',null); mostra('pConnecta'); }
+
+/* ── memòria del Càlcul a l'aparell (IndexedDB): només es torna a baixar si al PANELL ha canviat ── */
+function idb(){ return new Promise(function(res,rej){ var r=indexedDB.open('calcul-mobil',1); r.onupgradeneeded=function(e){ e.target.result.createObjectStore('app'); }; r.onsuccess=function(e){ res(e.target.result); }; r.onerror=function(e){ rej(e.target.error); }; }); }
+function idbGet(k){ return idb().then(function(db){ return new Promise(function(res){ var q=db.transaction('app','readonly').objectStore('app').get(k); q.onsuccess=function(){ res(q.result||null); }; q.onerror=function(){ res(null); }; }); }).catch(function(){ return null; }); }
+function idbSet(k,v){ return idb().then(function(db){ return new Promise(function(res){ var t=db.transaction('app','readwrite'); t.objectStore('app').put(v,k); t.oncomplete=function(){ res(true); }; t.onerror=function(){ res(false); }; }); }).catch(function(){ return false; }); }
+
+/* ── adaptar el Càlcul al mòbil (si alguna peça no hi és, NO s'obre: millor avisar que obrir-lo a mitges) ── */
+function adapta(html){
+  var falten=[];
+  function rep(a,b){ var n=html.split(a).length-1; if(n!==1){ falten.push(a.slice(0,60)+' ('+n+')'); return; } html=html.replace(a,function(){ return b; }); }
+  rep('F.recuperaArrel = function(){ return idbGet(DB_ARREL, ST_ARREL, K_ARREL).catch(function(){ return null; }); };', 'F.recuperaArrel = function(){ return Promise.resolve(window.TMROOT); };');
+  rep('async function restoreRootHandle(){try{rootDir=await idbGet(IDB_KEY)||null;}catch(e){rootDir=null;}}', 'async function restoreRootHandle(){ rootDir=window.TMROOT; }');
+  /* l'adreça: dins del marc no n'hi ha; el Càlcul la llegeix de window.TM_SEARCH (projecte fix + càlcul obert) */
+  rep("location.replace(location.pathname+'?'+q.toString());", "window.TMDBX.navega('?'+q.toString());");
+  var nS=html.split('location.search').length-1; if(nS<3) falten.push('location.search ('+nS+')'); html=html.split('location.search').join('window.TM_SEARCH');
+  rep('try{ window.close(); }catch(e){}', 'window.TMDBX.tanca(); return;');
+  rep('<meta name="viewport" content="width=device-width, initial-scale=1">', '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">');
+  /* informe (v1.1): el botó 📄 obre les opcions del mòbil (veure el complet / enviar la primera valoració, amb idiomes) */
+  rep("document.getElementById('btnInforme').onclick=()=>{", "document.getElementById('btnInforme').onclick=()=>{ if(window.TMDBX&&window.TMDBX.opcionsInforme) return window.TMDBX.opcionsInforme({ noms:NOMS_IDIOMA, aplica:aplicaTipusInforme, genera:generaInforme, brut:(typeof markDirty==='function'?markDirty:null) });");
+  /* informe: no s'arxiva a CALCULS PROVISIONALS; s'obre o s'envia */
+  var i=html.indexOf('  let desat=false, sensePro=false;'), j=html.indexOf("let ultimInforme='';");
+  if(i<0 || j<0 || j<i || j-i>6000) falten.push('informe');
+  else html=html.slice(0,i)+"  window.TMDBX.informe(fitxer, inf.bytes);   /* CÀLCUL MÒBIL: no s'arxiva; s'obre o s'envia */\n}\n"+html.slice(j);
+  /* la capa de Dropbox i l'estil del mòbil, abans del nucli */
+  var k=html.indexOf('<script>\n/*==== PANELL NUCLI');
+  if(k<0) falten.push('nucli');
+  else html=html.slice(0,k)+'<script>'+$('tm-shim').textContent+'<\/script>\n<style id="tm-mobil">'+$('tm-css').textContent+'</style>\n'+html.slice(k);
+  if(falten.length) throw new Error("aquesta versió del Càlcul ha canviat i el Càlcul Mòbil no s'hi pot adaptar ("+falten.join(' · ')+"). Cal actualitzar el Càlcul Mòbil.");
+  return html;
+}
+function obreCalcul(){
+  $('eErr').textContent=''; $('bObre').disabled=true; $('eCalc').textContent='Comprovant la versió del PANELL…';
+  var path=CFG.arrel+'/'+CAMI_APP, m;
+  rpc('files/get_metadata',{ path:path }).then(function(md){ m=md; return idbGet('calcul'); }).then(function(c){
+    if(c && c.rev===m.rev) return c.text;
+    $('eCalc').textContent='Baixant el Càlcul del PANELL ('+Math.round(m.size/1024)+' KB)…';
+    return baixa('rev:'+m.rev).then(function(t){ idbSet('calcul',{ rev:m.rev, text:t, quan:m.server_modified }); return t; });
+  }).then(function(t){
+    var v=(/const VERSIO_APP='([^']+)'/.exec(t)||[])[1]||'?';
+    var html=adapta(t);
+    var cap=document.createElement('div'); cap.id='tmApp';
+    cap.style.cssText='position:fixed;inset:0;z-index:50;background:#fff;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+    var f=document.createElement('iframe'); f.title='Càlcul de Baranes'; f.style.cssText='display:block;width:100%;height:100%;border:0';
+    cap.appendChild(f); document.body.appendChild(cap); f.srcdoc=html;
+    try{ history.pushState({cm:1},''); }catch(e){}
+    $('eCalc').textContent='el del PANELL (patrimoni) · v'+v; $('bObre').disabled=false;
+  }).catch(function(e){ $('bObre').disabled=false; $('eCalc').textContent='el del PANELL (patrimoni)'; $('eErr').textContent='⚠ '+(e&&e.message||e); });
+}
+window.TM_TANCA=function(){ var c=$('tmApp'); if(c) c.parentNode.removeChild(c); };
+window.addEventListener('popstate', function(){ var c=$('tmApp'); if(!c) return; var w=null; try{ w=c.querySelector('iframe').contentWindow; }catch(e){}
+  var P=w && w.PANELL; if(P && P.brut && P.brut()){ try{ history.pushState({cm:1},''); }catch(e){} if(P.desa) P.desa({auto:true}); return; } window.TM_TANCA(); });
+
+$('bEntra').onclick=entra; $('bObre').onclick=obreCalcul;
+document.querySelectorAll('[data-cfg]').forEach(function(b){ b.onclick=function(){ _de=document.querySelector('.pant.on').id; $('cClau').value=CFG.clau; $('cArrel').value=CFG.arrel;
+  $('cInfo').innerHTML='Versió <b>'+APP_VERSION+'</b> · Càlcul: <b>'+CAMI_APP+'</b><br>Adreça per a les «Redirect URIs» de Dropbox:<br><b>'+REDIRECT+'</b>'; mostra('pCfg'); }; });
+$('cTorna').onclick=function(){ mostra(_de); };
+$('cDesa').onclick=function(){ CFG.clau=$('cClau').value.trim()||APP_KEY_DEFECTE; CFG.arrel=($('cArrel').value.trim()||ARREL_DEFECTE).replace(/\/+$/,''); lsSet('tm.clau',CFG.clau); lsSet('tm.arrel',CFG.arrel); mostra(_de); };
+$('cSurt').onclick=function(){ if(confirm('Desconnectar aquest aparell del Dropbox? (també la Tresoreria Mòbil, que fa servir la mateixa connexió)')) desconnecta(); };
+$('eVer').textContent=APP_VERSION;
+
+/* Marc d'iPhone a l'ordinador (amb ratolí i pantalla gran) */
+function muntaMarc(){
+  var hz=lsGet('cm.marcVert','0')!=='1';
+  document.body.innerHTML='<div style="position:fixed;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;color:#fff;font-size:13px;z-index:5">'+
+    '<b>Càlcul Mòbil '+APP_VERSION+'</b><span style="opacity:.75">· simulació iPhone</span>'+
+    '<button id="mGira" style="border:0;border-radius:8px;padding:6px 10px;font-weight:700;cursor:pointer">⟲ Girar</button></div>'+
+    '<div id="mMarc" style="position:relative;background:#0d0f14;border-radius:46px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.55),inset 0 0 0 2px #3a3f4a;transform-origin:center center">'+
+    '<iframe id="mIf" src="'+location.pathname+'?dins=1" style="display:block;border:0;border-radius:34px;background:#fff"></iframe></div>';
+  document.body.style.cssText='margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#16251d;overflow:hidden';
+  function posa(){ var W=hz?844:390, H=hz?390:844, f=$('mIf'), mm=$('mMarc'); f.style.width=W+'px'; f.style.height=H+'px';
+    var e=Math.min(1,(window.innerWidth-40)/(W+28),(window.innerHeight-70)/(H+28)); mm.style.transform='scale('+e+')'; }
+  $('mGira').onclick=function(){ hz=!hz; lsSet('cm.marcVert',hz?'0':'1'); posa(); };
+  window.addEventListener('resize',posa); posa();
+}
+(function(){
+  var qs=new URLSearchParams(location.search), code=qs.get('code'), err=qs.get('error_description')||qs.get('error');
+  if(err){ $('eErr').textContent='Dropbox: '+err; history.replaceState(null,'',REDIRECT); }
+  var p=Promise.resolve();
+  if(code){ var verif=sessionStorage.getItem('cm.verif');
+    p=tokenPost({ code:code, grant_type:'authorization_code', code_verifier:verif, client_id:CFG.clau, redirect_uri:REDIRECT }).then(function(j){
+      TOKEN={ access:j.access_token, refresh:j.refresh_token||null, exp:Date.now()+(j.expires_in||14400)*1000-60000 }; lsSet('tm.token',JSON.stringify(TOKEN)); sessionStorage.removeItem('cm.verif'); history.replaceState(null,'',REDIRECT); }); }
+  p.then(function(){
+    if(!DINS && window.matchMedia && matchMedia('(pointer:fine)').matches && window.innerWidth>1000){ muntaMarc(); return; }
+    if(!TOKEN.refresh && !TOKEN.access){ mostra('pConnecta'); return; }
+    return rpc('users/get_current_account',null).then(function(a){
+      var mail=(a&&a.email||'').toLowerCase(); lsSet('tm.compte',mail);
+      if(USUARIS_PERMESOS.indexOf(mail)<0){ alert('Aquest compte de Dropbox ('+mail+') no pot fer servir el Càlcul.'); desconnecta(); return; }
+      $('eCompte').textContent=mail; mostra('pObre'); });
+  }).catch(function(e){ $('eErr').textContent='⚠ '+(e&&e.message||e); mostra(TOKEN.refresh?'pObre':'pConnecta'); });
+})();
+</script>
+</body>
+</html>
