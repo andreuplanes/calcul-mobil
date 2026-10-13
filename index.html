@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Càlcul">
 <meta name="theme-color" content="#1f3a2e"><meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
-<title>Càlcul Mòbil · v1.5</title>
+<title>Càlcul Mòbil · v1.6</title>
 <!-- ═══════════════════════════════════════════════════════════════════════════
-  PANELL · CÀLCUL MÒBIL · v1.5 (13/10/2026) · ENTRADA
+  PANELL · CÀLCUL MÒBIL · v1.6 (13/10/2026) · ENTRADA
   · El Càlcul de Baranes del PANELL a l'iPhone, per a CÀLCULS PROVISIONALS a peu d'obra (Andreu, 13/10/2026).
   · PRIVAT: aquesta pàgina (pública a GitHub) NO porta el Càlcul. Després de connectar amb Dropbox (compte de l'Andreu), LLEGEIX el Càlcul
     de PATRIMONI del PANELL (/PANELL/apps/baranes/_estables/baranes_calcul.html) i l'obre aquí, adaptat al mòbil. Sempre és la mateixa
@@ -20,6 +20,7 @@
   · Dropbox: la mateixa app que la Tresoreria Mòbil («PANELL Tresoreria Andreu», ntd7gdp1oqu7whl) i el mateix testimoni (tm.token).
   HISTÒRIA
     v1.0 (13/10/2026) — Primera versió.
+    v1.6 (13/10/2026) — Visor de PDF dins de l'app (pdf.js al costat: pdf.min.js + pdf.worker.min.js); abans s'obria fora i l'iPhone tancava l'app.
     v1.5 (13/10/2026) — Nom de la primera valoració: es proposa (etiqueta · perfil · muntatge · fixació · vidre · alçada) i es pot canviar; si ja n'hi ha una amb el mateix nom, pregunta (nova / substituir / no desar). 🗄 Arxivar: les valoracions amb casella pròpia.
     v1.4 (13/10/2026) — La primera valoració (la que s'envia) es desa a CALCULS PROVISIONALS/CALCUL/ (un PDF per càlcul, se substitueix); 🗄 Arxivar se l'emporta amb el càlcul.
     v1.3 (13/10/2026) — El nom del projecte «📁 CALCULS PROVISIONALS» es veu a la barra.
@@ -235,7 +236,45 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
             if(a === 'nova') desa(nomF(n), { '.tag':'add' }); else if(a === 'subst') desa(nomF(1), { '.tag':'overwrite' }); else D.mostraInforme(nomF(1), bytes, true, 'No s\'ha desat.'); }); });
       }, function(e){ D.mostraInforme(nom, bytes, true, '⚠ No s\'ha pogut comprovar la carpeta (' + (e && e.message || e) + '). La pots enviar igualment.'); });
     }
-    D.mostraInforme(nom, bytes, false, '');
+    D.visorPDF(bytes, nom, null);   /* v1.6: el complet s'obre directament al visor de l'app */
+  };
+  /* v1.6 · VISOR DE PDF DINS DE L'APP (Andreu: «si miro l'informe al mòbil de cop es tanca i surt una pantalla blanca o una altra
+     aplicació»). Abans s'obria fora (window.open): l'iPhone treia l'app de la pantalla i, en tornar, la tornava a carregar. Ara el PDF
+     es dibuixa aquí amb pdf.js (desat al costat, a GitHub), pàgina a pàgina NOMÉS quan surt a la pantalla, i les que queden lluny
+     s'esborren: la memòria de l'iPhone no s'omple encara que l'informe complet tingui moltes pàgines. */
+  var _pdfjs = null;
+  D.carregaPDF = function(){ if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if(!_pdfjs) _pdfjs = new Promise(function(ok, ko){ var sc = document.createElement('script'), base = new URL('.', document.baseURI).href;
+      sc.src = base + 'pdf.min.js'; sc.onload = function(){ if(!window.pdfjsLib) return ko(new Error('pdf.js')); pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js'; ok(pdfjsLib); };
+      sc.onerror = function(){ _pdfjs = null; ko(new Error("no s'ha pogut carregar el visor de PDF (pdf.min.js)")); }; document.head.appendChild(sc); });
+    return _pdfjs; };
+  D.visorPDF = function(bytes, nom, fitxerEnviar){
+    var v = document.createElement('div'); v.className = 'tm-pdf';
+    v.innerHTML = '<div class="tm-pdf-barra"><button data-a="tanca" class="tm-pdf-tanca">✕ Tancar</button><span class="tm-pdf-nom"></span>' +
+      '<button data-a="menys">A−</button><span class="tm-pdf-z">100%</span><button data-a="mes">A+</button>' + (fitxerEnviar ? '<button data-a="envia" class="tm-prin">📤 Enviar</button>' : '') + '</div><div class="tm-pdf-cos"><div class="tm-sub" style="padding:20px">Obrint el PDF…</div></div>';
+    v.querySelector('.tm-pdf-nom').textContent = nom; document.body.appendChild(v);
+    var cos = v.querySelector('.tm-pdf-cos'), doc = null, zoom = 1, pags = [], obs = null, viu = true;
+    var tanca = function(){ viu = false; if(obs) obs.disconnect(); pags.forEach(function(p){ buida(p); }); if(doc) doc.destroy(); v.remove(); };
+    var buida = function(p){ var c = p.el && p.el.querySelector('canvas'); if(c){ c.width = 0; c.height = 0; c.remove(); } p.fet = false; if(p.tasca){ try{ p.tasca.cancel(); }catch(e){} p.tasca = null; } };
+    var dibuixa = function(p){ if(p.fet || !viu) return; p.fet = true;
+      doc.getPage(p.n).then(function(pg){ if(!viu || !p.fet) return; var w = p.el.clientWidth, v0 = pg.getViewport({ scale:1 }), dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var vp = pg.getViewport({ scale:w / v0.width * dpr }), c = document.createElement('canvas'); c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+        var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); p.el.appendChild(c);
+        p.tasca = pg.render({ canvasContext:x, viewport:vp }); return p.tasca.promise.then(function(){ p.tasca = null; pg.cleanup(); }); }).catch(function(){}); };
+    var munta = function(){ cos.innerHTML = ''; if(obs) obs.disconnect(); pags.forEach(buida);
+      var amp = Math.round(Math.max(200, cos.clientWidth - 16) * zoom);
+      pags.forEach(function(p){ p.el = document.createElement('div'); p.el.className = 'tm-pdf-pag'; p.el.style.width = amp + 'px'; p.el.style.height = Math.round(amp * p.r) + 'px'; cos.appendChild(p.el); });
+      obs = new IntersectionObserver(function(es){ es.forEach(function(e){ var p = pags[+e.target.getAttribute('data-i')]; if(e.isIntersecting) dibuixa(p); else buida(p); }); }, { root:cos, rootMargin:'600px 0px' });
+      pags.forEach(function(p, i){ p.el.setAttribute('data-i', i); obs.observe(p.el); });
+      v.querySelector('.tm-pdf-z').textContent = Math.round(zoom * 100) + '%'; };
+    v.addEventListener('click', function(ev){ var b = ev.target.closest && ev.target.closest('button'), a = b && b.getAttribute('data-a'); if(!a) return;
+      if(a === 'tanca') tanca();
+      else if(a === 'envia') navigator.share({ files:[fitxerEnviar], title:nom }).catch(function(){});
+      else if(doc){ var dalt = cos.scrollTop / Math.max(1, cos.scrollHeight); zoom = Math.max(1, Math.min(3, zoom + (a === 'mes' ? 0.5 : -0.5))); munta(); cos.scrollTop = dalt * cos.scrollHeight; } });
+    D.carregaPDF().then(function(L){ return L.getDocument({ data:new Uint8Array(bytes.slice ? bytes.slice(0) : bytes), isEvalSupported:false }).promise; }).then(function(d){ if(!viu){ d.destroy(); return; } doc = d;
+      var ps = []; for(var i = 1; i <= d.numPages; i++) ps.push(d.getPage(i).then(function(pg){ var vp = pg.getViewport({ scale:1 }); return vp.height / vp.width; }));
+      return Promise.all(ps).then(function(rs){ pags = rs.map(function(r, i){ return { n:i + 1, r:r, el:null, fet:false }; }); munta(); }); })
+      .catch(function(e){ cos.innerHTML = '<div class="tm-sub" style="padding:20px">⚠ No s\'ha pogut obrir el PDF: ' + (e && e.message || e) + '</div>'; });
   };
   D.mostraInforme = function(nom, bytes, envia, desat){
     var f = new File([bytes], nom, { type:'application/pdf' }), u = URL.createObjectURL(f);
@@ -247,7 +286,7 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
                                          : '<button data-a="obre" class="tm-prin">👁 Obrir</button>') + '<button data-a="tanca">Tancar</button></div></div>';
     document.body.appendChild(c);
     c.addEventListener('click', function(ev){ var a = ev.target.getAttribute && ev.target.getAttribute('data-a'); if(!a) return;
-      if(a === 'obre') window.open(u, '_blank');
+      if(a === 'obre') D.visorPDF(bytes, nom, envia ? f : null);
       else if(a === 'comparteix') navigator.share({ files:[f], title:nom }).catch(function(){});
       else c.remove(); });
   };
@@ -358,9 +397,21 @@ main > section.tm-on{ display:block; }
 /* v1.5 · nom per desar la primera valoració */
 .tm-nom{ display:block; margin:10px 0 2px; }
 .tm-nom input{ display:block; width:100%; box-sizing:border-box; margin-top:4px; padding:9px 10px; border:1px solid #94a3b8; border-radius:8px; font:15px system-ui,Arial,sans-serif; }
+/* v1.6 · visor de PDF dins de l'app */
+.tm-pdf{ position:fixed; inset:0; z-index:2147483100; background:#525659; display:flex; flex-direction:column; }
+.tm-pdf-barra{ display:flex; align-items:center; gap:8px; padding:6px 10px; padding-top:max(6px, env(safe-area-inset-top)); background:#1f2328; color:#fff; flex:none; }
+.tm-pdf-barra button{ border:1px solid #64748b; background:#334155; color:#fff; border-radius:8px; padding:8px 12px; font:600 15px system-ui,Arial,sans-serif; }
+.tm-pdf-barra .tm-pdf-tanca{ background:#b42318; border-color:#b42318; }
+.tm-pdf-barra .tm-prin{ background:#2f5d46; border-color:#2f5d46; }
+.tm-pdf-nom{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:13px system-ui,Arial,sans-serif; opacity:.85; }
+.tm-pdf-z{ font:13px system-ui,Arial,sans-serif; min-width:42px; text-align:center; }
+.tm-pdf-cos{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding:8px; }
+.tm-pdf-pag{ margin:0 auto 10px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.35); }
+.tm-pdf-pag canvas{ width:100%; height:100%; display:block; }
+.tm-pdf .tm-sub{ color:#e5e7eb; }
 </script>
 <script>
-var APP_VERSION='v1.5';
+var APP_VERSION='v1.6';
 var APP_KEY_DEFECTE='ntd7gdp1oqu7whl', ARREL_DEFECTE='/PANELL', USUARIS_PERMESOS=['andreuplanes@gmail.com'];
 var CAMI_APP='apps/baranes/_estables/baranes_calcul.html';
 function $(id){ return document.getElementById(id); }
