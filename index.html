@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Càlcul">
 <meta name="theme-color" content="#1f3a2e"><meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
-<title>Càlcul Mòbil · v1.4</title>
+<title>Càlcul Mòbil · v1.5</title>
 <!-- ═══════════════════════════════════════════════════════════════════════════
-  PANELL · CÀLCUL MÒBIL · v1.4 (13/10/2026) · ENTRADA
+  PANELL · CÀLCUL MÒBIL · v1.5 (13/10/2026) · ENTRADA
   · El Càlcul de Baranes del PANELL a l'iPhone, per a CÀLCULS PROVISIONALS a peu d'obra (Andreu, 13/10/2026).
   · PRIVAT: aquesta pàgina (pública a GitHub) NO porta el Càlcul. Després de connectar amb Dropbox (compte de l'Andreu), LLEGEIX el Càlcul
     de PATRIMONI del PANELL (/PANELL/apps/baranes/_estables/baranes_calcul.html) i l'obre aquí, adaptat al mòbil. Sempre és la mateixa
@@ -20,6 +20,7 @@
   · Dropbox: la mateixa app que la Tresoreria Mòbil («PANELL Tresoreria Andreu», ntd7gdp1oqu7whl) i el mateix testimoni (tm.token).
   HISTÒRIA
     v1.0 (13/10/2026) — Primera versió.
+    v1.5 (13/10/2026) — Nom de la primera valoració: es proposa (etiqueta · perfil · muntatge · fixació · vidre · alçada) i es pot canviar; si ja n'hi ha una amb el mateix nom, pregunta (nova / substituir / no desar). 🗄 Arxivar: les valoracions amb casella pròpia.
     v1.4 (13/10/2026) — La primera valoració (la que s'envia) es desa a CALCULS PROVISIONALS/CALCUL/ (un PDF per càlcul, se substitueix); 🗄 Arxivar se l'emporta amb el càlcul.
     v1.3 (13/10/2026) — El nom del projecte «📁 CALCULS PROVISIONALS» es veu a la barra.
     v1.2 (13/10/2026) — Idiomes de l'informe lliures (també es pot treure el català o el castellà) · 👁 Portada amb ✕ Tancar visible.
@@ -174,6 +175,15 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
   /* ── informe (v1.1, Andreu): al mòbil es pot VEURE el complet («Tot») i s'ENVIA la primera valoració
        («Estudi de càlculs»: portada + resum de dades al dors, 2 fulls), amb els idiomes triats. Res s'arxiva. ── */
   D.modeInforme = 'envia';
+  /* v1.5 (Andreu: «que es guardi de forma més explícita… perfil, fixacions… o poder-hi posar un nom»): nom proposat per desar la
+     primera valoració = etiqueta del càlcul + perfil + muntatge + fixació + vidre + alçada; es pot canviar abans d'enviar. */
+  D.slugNom = function(t){ return String(t || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[·\s\/\\]+/g, '-').replace(/[^A-Z0-9+\-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 80); };
+  D.nomAuto = function(){ var p = [];
+    try{ var e = (document.getElementById('etiquetaCalcul') || {}).value; if(e) p.push(e); }catch(x){}
+    try{ if(S.perfil) p.push(S.perfil); if(S.muntatge) p.push(S.muntatge);
+      var l = S.linies && S.linies[0]; if(l && l.fix) p.push(l.fix);
+      if(Array.isArray(S.comp) && S.comp.length) p.push(S.comp.join('+')); if(S.hv) p.push('h' + S.hv); }catch(x){}
+    return p.join(' · '); };
   D.opcionsInforme = function(k){ var NOMS_IDIOMA = k.noms;
     var N = DB.norms[S.norm] || {}, tots = ['ca','es','fr','en','it','de','pt'];
     var per = ['ca'].concat(N.lang && N.lang !== 'ca' ? [N.lang] : []).concat((S.idiomesExtra || []).filter(function(l){ return l !== 'ca' && l !== N.lang; }));
@@ -183,12 +193,14 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
       '<div class="tm-sub">Idiomes: marca els que vulguis (un o més).</div><div class="tm-idiomes">' +
       tots.map(function(l){ return '<label><input type="checkbox" data-l="' + l + '"' + (tria.indexOf(l) >= 0 ? ' checked' : '') + '> ' + NOMS_IDIOMA[l] + '</label>'; }).join('') + '</div>' +
       '<div class="tm-sub tm-avis" style="display:none;color:#b42318">Marca almenys un idioma.</div>' +
+      '<label class="tm-nom"><span class="tm-sub">Nom per desar la primera valoració (el pots canviar):</span><input id="tm-nomInf" type="text" autocomplete="off"></label>' +
       '<div class="tm-botons tm-col"><button data-a="envia" class="tm-prin">📤 Enviar la primera valoració<br><small>estudi de càlculs · portada + resum de dades (2 fulls per idioma)</small></button>' +
       '<button data-a="veu">👁 Veure l\'informe complet<br><small>tot: estudi del vidre + càlculs + informe general + annex</small></button>' +
       '<button data-a="tanca">Cancel·lar</button></div></div>';
-    document.body.appendChild(c);
+    document.body.appendChild(c); c.querySelector('#tm-nomInf').value = D.nomAuto();
     c.addEventListener('click', function(ev){ var b = ev.target.closest && ev.target.closest('button'); var a = b && b.getAttribute('data-a'); if(!a) return;
       if(a === 'tanca'){ c.remove(); return; }
+      D.nomInforme = c.querySelector('#tm-nomInf').value.trim() || D.nomAuto();
       var idi = [].slice.call(c.querySelectorAll('input[data-l]')).filter(function(x){ return x.checked; }).map(function(x){ return x.getAttribute('data-l'); });
       if(!idi.length){ c.querySelector('.tm-avis').style.display = ''; return; }
       try{ localStorage.setItem('cm.idiomes', JSON.stringify(idi)); }catch(e){}
@@ -204,9 +216,25 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
   D.dirCalcul = function(){ return uneix(uneix(uneix(uneix(D.arrel, 'projectes'), '_baranes'), window.TM_PROJECTE), 'CALCUL'); };
   D.informe = function(nom, bytes){
     var envia = D.modeInforme !== 'veu';
-    if(envia){ var cami = uneix(D.dirCalcul(), nom), avis = document.createElement('div'); avis.className = 'tm-full'; avis.innerHTML = '<div class="tm-caixa"><b>💾 Desant la primera valoració…</b></div>'; document.body.appendChild(avis);
-      return D.puja(cami, bytes, { '.tag':'overwrite' }).then(function(r){ r['.tag'] = 'file'; MD[cami.toLowerCase()] = r; avis.remove(); D.mostraInforme(nom, bytes, true, '✓ Desada a CALCUL/ del projecte.'); },
-        function(e){ avis.remove(); D.mostraInforme(nom, bytes, true, '⚠ No s\'ha pogut desar (' + (e && e.message || e) + '). La pots enviar igualment.'); }); }
+    if(envia){
+      var codi = (/_([A-Za-z0-9-]+)(_rev)?\.pdf$/.exec(nom) || [])[1] || '', sl = D.slugNom(D.nomInforme || D.nomAuto()) || 'SENSE-NOM';
+      var arrel = window.TM_PROJECTE + '_estudi_calculs_' + sl, nomF = function(n){ return arrel + (n > 1 ? '-' + n : '') + (codi ? '_' + codi : '') + '.pdf'; };
+      var existeix = function(f){ return D.rpc('files/get_metadata', { path:uneix(D.dirCalcul(), f) }).then(function(){ return true; }, function(e){ if(e && e.status === 409) return false; throw e; }); };
+      var desa = function(f, mode){ var cami = uneix(D.dirCalcul(), f), avis = document.createElement('div'); avis.className = 'tm-full'; avis.innerHTML = '<div class="tm-caixa"><b>💾 Desant la primera valoració…</b></div>'; document.body.appendChild(avis);
+        return D.puja(cami, bytes, mode).then(function(r){ r['.tag'] = 'file'; MD[cami.toLowerCase()] = r; avis.remove(); D.mostraInforme(f, bytes, true, '✓ Desada a CALCUL/ del projecte.'); },
+          function(e){ avis.remove(); D.mostraInforme(f, bytes, true, '⚠ No s\'ha pogut desar (' + (e && e.message || e) + '). La pots enviar igualment.'); }); };
+      var lliure = function(n){ return existeix(nomF(n)).then(function(si){ return si ? lliure(n + 1) : n; }); };
+      return existeix(nomF(1)).then(function(si){
+        if(!si) return desa(nomF(1), { '.tag':'add' });
+        return lliure(2).then(function(n){ var q = document.createElement('div'); q.className = 'tm-full';
+          q.innerHTML = '<div class="tm-caixa"><b>Ja hi ha una primera valoració amb aquest nom</b><div class="tm-sub">' + nomF(1).replace(/</g, '&lt;') + '</div>' +
+            '<div class="tm-botons tm-col"><button data-a="nova" class="tm-prin">💾 Desar-la com a nova<br><small>' + nomF(n).replace(/</g, '&lt;') + '</small></button>' +
+            '<button data-a="subst">♻ Substituir l\'anterior</button><button data-a="no">No desar-la (només enviar)</button></div></div>';
+          document.body.appendChild(q);
+          q.addEventListener('click', function(ev){ var b = ev.target.closest && ev.target.closest('button'), a = b && b.getAttribute('data-a'); if(!a) return; q.remove();
+            if(a === 'nova') desa(nomF(n), { '.tag':'add' }); else if(a === 'subst') desa(nomF(1), { '.tag':'overwrite' }); else D.mostraInforme(nomF(1), bytes, true, 'No s\'ha desat.'); }); });
+      }, function(e){ D.mostraInforme(nom, bytes, true, '⚠ No s\'ha pogut comprovar la carpeta (' + (e && e.message || e) + '). La pots enviar igualment.'); });
+    }
     D.mostraInforme(nom, bytes, false, '');
   };
   D.mostraInforme = function(nom, bytes, envia, desat){
@@ -235,15 +263,16 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
         (g[base] = g[base] || { base:base, fitxers:[], quan:0 }).fitxers.push(h); var m = MD[h.path.toLowerCase()]; if(m && !/\.bak$/i.test(h.name)) g[base].quan = Date.parse(m.server_modified); });
       var ws = Object.keys(g).map(function(k){ return g[k]; }).sort(function(a, b){ return b.quan - a.quan; });
       var slugDe = function(b){ var m = b.slice(cap.length).replace(/(_rev)?\.json$/i, ''); return m.replace(/^__/, ''); };
-      /* v1.4: la primera valoració desada (<PROJECTE>_estudi_calculs[_<slug>]_<codi>.pdf) s'arxiva amb el seu càlcul */
-      var capP = window.TM_PROJECTE + '_estudi_calculs';
-      ll.forEach(function(h){ if(h.kind !== 'file' || h.name.indexOf(capP) !== 0 || !/\.pdf$/i.test(h.name)) return;
-        var sl = h.name.slice(capP.length).replace(/_[^_]+(_rev)?\.pdf$/i, '').replace(/^_/, '').toUpperCase();
-        var w = ws.filter(function(x){ return (slugDe(x.base) || '').toUpperCase() === sl; })[0]; if(w) w.fitxers.push(h); });
+      /* v1.5: les primeres valoracions desades (PDF), cadascuna amb la seva casella, darrere dels càlculs */
+      var capP = window.TM_PROJECTE + '_estudi_calculs', pdfs = [];
+      ll.forEach(function(h){ if(h.kind !== 'file' || h.name.indexOf(capP) !== 0 || !/\.pdf$/i.test(h.name)) return; var m = MD[h.path.toLowerCase()];
+        pdfs.push({ base:h.name, fitxers:[h], quan:m ? Date.parse(m.server_modified) : 0, pdf:true, nom:h.name.slice(capP.length).replace(/^_/, '').replace(/\.pdf$/i, '') }); });
+      pdfs.sort(function(a, b){ return b.quan - a.quan; }); var nCalc = ws.length; ws = ws.concat(pdfs);
       var h = '<div class="tm-caixa"><b>🗄 Arxivar càlculs provisionals</b><div class="tm-sub">Els marcats passen a <i>CALCUL/antics/</i>: desapareixen de la llista però no s\'esborren (a l\'ordinador els pots recuperar).</div><div class="tm-llista">';
       if(!ws.length) h += '<div class="tm-sub">Encara no hi ha cap càlcul desat.</div>';
-      ws.forEach(function(w, i){ var s = slugDe(w.base), es = (s || '').toUpperCase() === actual;
-        h += '<label class="tm-fila' + (es ? ' tm-off' : '') + '"><input type="checkbox" data-i="' + i + '"' + (es ? ' disabled' : '') + '> <span><b>' + (s || '(sense nom)') + '</b>' + (es ? ' · <i>és el que tens obert</i>' : '') + (w.fitxers.some(function(x){ return /\.pdf$/i.test(x.name); }) ? ' · 📄' : '') + '</span><span class="tm-sub">' + (w.quan ? new Date(w.quan).toLocaleString('ca-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '') + '</span></label>'; });
+      ws.forEach(function(w, i){ var s = w.pdf ? '' : slugDe(w.base), es = !w.pdf && (s || '').toUpperCase() === actual;
+        if(i === nCalc && w.pdf) h += '<div class="tm-sub" style="margin-top:8px"><b>📄 Primeres valoracions desades</b></div>';
+        h += '<label class="tm-fila' + (es ? ' tm-off' : '') + '"><input type="checkbox" data-i="' + i + '"' + (es ? ' disabled' : '') + '> <span><b>' + (w.pdf ? '📄 ' + w.nom.replace(/</g, '&lt;') : (s || '(sense nom)')) + '</b>' + (es ? ' · <i>és el que tens obert</i>' : '') + '</span><span class="tm-sub">' + (w.quan ? new Date(w.quan).toLocaleString('ca-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '') + '</span></label>'; });
       h += '</div><div class="tm-botons"><button data-a="tanca">Tancar</button><button data-a="arxiva" class="tm-prin">Arxivar els marcats</button></div></div>';
       c.innerHTML = h;
       c.onclick = function(ev){ var a = ev.target.getAttribute && ev.target.getAttribute('data-a'); if(!a) return; if(a === 'tanca'){ c.remove(); return; }
@@ -251,7 +280,7 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
         var fs = []; sel.forEach(function(w){ fs = fs.concat(w.fitxers); });
         c.querySelector('.tm-botons').innerHTML = '<span class="tm-sub">Arxivant…</span>';
         var p = Promise.resolve(); fs.forEach(function(f){ p = p.then(function(){ return D.rpc('files/move_v2', { from_path:f.path, to_path:uneix(uneix(dir, 'antics'), f.name), autorename:true }).then(function(){ oblida(f.path); }); }); });
-        p.then(function(){ c.remove(); alert(sel.length + ' càlcul' + (sel.length > 1 ? 's arxivats' : ' arxivat') + ' a CALCUL/antics/');
+        p.then(function(){ c.remove(); alert(sel.length + (sel.length > 1 ? ' elements arxivats' : ' element arxivat') + ' a CALCUL/antics/');
           var P = window.PANELL; Promise.resolve(P && P.brut && P.brut() ? P.desa({ auto:true }) : true).then(function(){ location.reload(); }); },
           function(e){ alert('⚠ No s\'ha pogut arxivar: ' + e.message); c.remove(); }); };
     }, function(e){ c.querySelector('.tm-sub').textContent = e && e.status === 409 ? 'Encara no hi ha cap càlcul desat.' : ('⚠ ' + e.message); c.onclick = function(){ c.remove(); }; });
@@ -326,9 +355,12 @@ main > section.tm-on{ display:block; }
 #prevPortadaCos{ overflow:auto !important; -webkit-overflow-scrolling:touch; justify-content:safe center !important; }
 /* v1.3 · nom del projecte, fix i sempre a la vista */
 #tm-proj{ flex:none; align-self:center; white-space:nowrap; font:700 13px system-ui,Arial,sans-serif; color:#2f5d46; background:#eef5f0; border:1px solid #2f5d46; border-radius:8px; padding:6px 10px; margin:0 6px; }
+/* v1.5 · nom per desar la primera valoració */
+.tm-nom{ display:block; margin:10px 0 2px; }
+.tm-nom input{ display:block; width:100%; box-sizing:border-box; margin-top:4px; padding:9px 10px; border:1px solid #94a3b8; border-radius:8px; font:15px system-ui,Arial,sans-serif; }
 </script>
 <script>
-var APP_VERSION='v1.4';
+var APP_VERSION='v1.5';
 var APP_KEY_DEFECTE='ntd7gdp1oqu7whl', ARREL_DEFECTE='/PANELL', USUARIS_PERMESOS=['andreuplanes@gmail.com'];
 var CAMI_APP='apps/baranes/_estables/baranes_calcul.html';
 function $(id){ return document.getElementById(id); }
