@@ -7,19 +7,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Càlcul">
 <meta name="theme-color" content="#1f3a2e"><meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
-<title>Càlcul Mòbil · v1.3</title>
+<title>Càlcul Mòbil · v1.4</title>
 <!-- ═══════════════════════════════════════════════════════════════════════════
-  PANELL · CÀLCUL MÒBIL · v1.3 (13/10/2026) · ENTRADA
+  PANELL · CÀLCUL MÒBIL · v1.4 (13/10/2026) · ENTRADA
   · El Càlcul de Baranes del PANELL a l'iPhone, per a CÀLCULS PROVISIONALS a peu d'obra (Andreu, 13/10/2026).
   · PRIVAT: aquesta pàgina (pública a GitHub) NO porta el Càlcul. Després de connectar amb Dropbox (compte de l'Andreu), LLEGEIX el Càlcul
     de PATRIMONI del PANELL (/PANELL/apps/baranes/_estables/baranes_calcul.html) i l'obre aquí, adaptat al mòbil. Sempre és la mateixa
     versió que l'ordinador i no cal pujar res a GitHub quan el Càlcul canvia.
   · Adaptació (en obrir): el disc del PANELL → Dropbox (capa «shim», imitació de l'API de carpetes del navegador), projecte fix
-    «CALCULS PROVISIONALS», informes que s'obren o s'envien sense arxivar-los, 🗄 Arxivar (a CALCUL/antics/), ⏎ Tancar torna aquí,
+    «CALCULS PROVISIONALS», la primera valoració que s'envia es desa (el complet només es mira), 🗄 Arxivar (a CALCUL/antics/), ⏎ Tancar torna aquí,
     pantalla per al mòbil. Si el Càlcul canvia tant que l'adaptació no hi encaixa, s'avisa i no s'obre (mai a mitges).
   · Dropbox: la mateixa app que la Tresoreria Mòbil («PANELL Tresoreria Andreu», ntd7gdp1oqu7whl) i el mateix testimoni (tm.token).
   HISTÒRIA
     v1.0 (13/10/2026) — Primera versió.
+    v1.4 (13/10/2026) — La primera valoració (la que s'envia) es desa a CALCULS PROVISIONALS/CALCUL/ (un PDF per càlcul, se substitueix); 🗄 Arxivar se l'emporta amb el càlcul.
     v1.3 (13/10/2026) — El nom del projecte «📁 CALCULS PROVISIONALS» es veu a la barra.
     v1.2 (13/10/2026) — Idiomes de l'informe lliures (també es pot treure el català o el castellà) · 👁 Portada amb ✕ Tancar visible.
     v1.1 (13/10/2026) — Informe: 👁 veure el complet o 📤 enviar la primera valoració (portada + resum de dades), amb idiomes a triar.
@@ -198,13 +199,22 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
         .then(function(){ k.aplica(abans); window.TM_IDIOMES = null; });
     });
   };
+  /* v1.4 (Andreu: «al menys el que enviem»): la PRIMERA VALORACIÓ es desa a CALCULS PROVISIONALS/CALCUL/ (un PDF per càlcul:
+     si es torna a fer, se substitueix). L'informe complet només es mira i no es desa. */
+  D.dirCalcul = function(){ return uneix(uneix(uneix(uneix(D.arrel, 'projectes'), '_baranes'), window.TM_PROJECTE), 'CALCUL'); };
   D.informe = function(nom, bytes){
     var envia = D.modeInforme !== 'veu';
+    if(envia){ var cami = uneix(D.dirCalcul(), nom), avis = document.createElement('div'); avis.className = 'tm-full'; avis.innerHTML = '<div class="tm-caixa"><b>💾 Desant la primera valoració…</b></div>'; document.body.appendChild(avis);
+      return D.puja(cami, bytes, { '.tag':'overwrite' }).then(function(r){ r['.tag'] = 'file'; MD[cami.toLowerCase()] = r; avis.remove(); D.mostraInforme(nom, bytes, true, '✓ Desada a CALCUL/ del projecte.'); },
+        function(e){ avis.remove(); D.mostraInforme(nom, bytes, true, '⚠ No s\'ha pogut desar (' + (e && e.message || e) + '). La pots enviar igualment.'); }); }
+    D.mostraInforme(nom, bytes, false, '');
+  };
+  D.mostraInforme = function(nom, bytes, envia, desat){
     var f = new File([bytes], nom, { type:'application/pdf' }), u = URL.createObjectURL(f);
     var potEnviar = !!(navigator.canShare && navigator.canShare({ files:[f] }));
     var c = document.createElement('div'); c.className = 'tm-full';
     c.innerHTML = '<div class="tm-caixa"><b>' + (envia ? '📤 Primera valoració preparada' : '👁 Informe complet preparat') + '</b><div class="tm-sub">' + nom.replace(/</g, '&lt;') + '</div>' +
-      '<div class="tm-sub">' + (envia ? 'Toca «Enviar» i tria WhatsApp, Correu…' : 'Només per mirar-lo al mòbil.') + ' No s\'arxiva a la carpeta.</div>' +
+      '<div class="tm-sub">' + (envia ? 'Toca «Enviar» i tria WhatsApp, Correu…' : 'Només per mirar-lo al mòbil: no es desa.') + '</div>' + (desat ? '<div class="tm-sub"><b>' + desat + '</b></div>' : '') +
       '<div class="tm-botons">' + (envia ? (potEnviar ? '<button data-a="comparteix" class="tm-prin">📤 Enviar…</button>' : '<a class="tm-prin" download="' + nom.replace(/"/g, '') + '" href="' + u + '">⬇ Desar</a>') + '<button data-a="obre">👁 Veure</button>'
                                          : '<button data-a="obre" class="tm-prin">👁 Obrir</button>') + '<button data-a="tanca">Tancar</button></div></div>';
     document.body.appendChild(c);
@@ -225,10 +235,15 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
         (g[base] = g[base] || { base:base, fitxers:[], quan:0 }).fitxers.push(h); var m = MD[h.path.toLowerCase()]; if(m && !/\.bak$/i.test(h.name)) g[base].quan = Date.parse(m.server_modified); });
       var ws = Object.keys(g).map(function(k){ return g[k]; }).sort(function(a, b){ return b.quan - a.quan; });
       var slugDe = function(b){ var m = b.slice(cap.length).replace(/(_rev)?\.json$/i, ''); return m.replace(/^__/, ''); };
+      /* v1.4: la primera valoració desada (<PROJECTE>_estudi_calculs[_<slug>]_<codi>.pdf) s'arxiva amb el seu càlcul */
+      var capP = window.TM_PROJECTE + '_estudi_calculs';
+      ll.forEach(function(h){ if(h.kind !== 'file' || h.name.indexOf(capP) !== 0 || !/\.pdf$/i.test(h.name)) return;
+        var sl = h.name.slice(capP.length).replace(/_[^_]+(_rev)?\.pdf$/i, '').replace(/^_/, '').toUpperCase();
+        var w = ws.filter(function(x){ return (slugDe(x.base) || '').toUpperCase() === sl; })[0]; if(w) w.fitxers.push(h); });
       var h = '<div class="tm-caixa"><b>🗄 Arxivar càlculs provisionals</b><div class="tm-sub">Els marcats passen a <i>CALCUL/antics/</i>: desapareixen de la llista però no s\'esborren (a l\'ordinador els pots recuperar).</div><div class="tm-llista">';
       if(!ws.length) h += '<div class="tm-sub">Encara no hi ha cap càlcul desat.</div>';
       ws.forEach(function(w, i){ var s = slugDe(w.base), es = (s || '').toUpperCase() === actual;
-        h += '<label class="tm-fila' + (es ? ' tm-off' : '') + '"><input type="checkbox" data-i="' + i + '"' + (es ? ' disabled' : '') + '> <span><b>' + (s || '(sense nom)') + '</b>' + (es ? ' · <i>és el que tens obert</i>' : '') + '</span><span class="tm-sub">' + (w.quan ? new Date(w.quan).toLocaleString('ca-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '') + '</span></label>'; });
+        h += '<label class="tm-fila' + (es ? ' tm-off' : '') + '"><input type="checkbox" data-i="' + i + '"' + (es ? ' disabled' : '') + '> <span><b>' + (s || '(sense nom)') + '</b>' + (es ? ' · <i>és el que tens obert</i>' : '') + (w.fitxers.some(function(x){ return /\.pdf$/i.test(x.name); }) ? ' · 📄' : '') + '</span><span class="tm-sub">' + (w.quan ? new Date(w.quan).toLocaleString('ca-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '') + '</span></label>'; });
       h += '</div><div class="tm-botons"><button data-a="tanca">Tancar</button><button data-a="arxiva" class="tm-prin">Arxivar els marcats</button></div></div>';
       c.innerHTML = h;
       c.onclick = function(ev){ var a = ev.target.getAttribute && ev.target.getAttribute('data-a'); if(!a) return; if(a === 'tanca'){ c.remove(); return; }
@@ -313,7 +328,7 @@ main > section.tm-on{ display:block; }
 #tm-proj{ flex:none; align-self:center; white-space:nowrap; font:700 13px system-ui,Arial,sans-serif; color:#2f5d46; background:#eef5f0; border:1px solid #2f5d46; border-radius:8px; padding:6px 10px; margin:0 6px; }
 </script>
 <script>
-var APP_VERSION='v1.3';
+var APP_VERSION='v1.4';
 var APP_KEY_DEFECTE='ntd7gdp1oqu7whl', ARREL_DEFECTE='/PANELL', USUARIS_PERMESOS=['andreuplanes@gmail.com'];
 var CAMI_APP='apps/baranes/_estables/baranes_calcul.html';
 function $(id){ return document.getElementById(id); }
