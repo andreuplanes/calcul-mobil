@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Càlcul">
 <meta name="theme-color" content="#1f3a2e"><meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
-<title>Càlcul Mòbil · v1.1</title>
+<title>Càlcul Mòbil · v1.2</title>
 <!-- ═══════════════════════════════════════════════════════════════════════════
-  PANELL · CÀLCUL MÒBIL · v1.1 (13/10/2026) · ENTRADA
+  PANELL · CÀLCUL MÒBIL · v1.2 (13/10/2026) · ENTRADA
   · El Càlcul de Baranes del PANELL a l'iPhone, per a CÀLCULS PROVISIONALS a peu d'obra (Andreu, 13/10/2026).
   · PRIVAT: aquesta pàgina (pública a GitHub) NO porta el Càlcul. Després de connectar amb Dropbox (compte de l'Andreu), LLEGEIX el Càlcul
     de PATRIMONI del PANELL (/PANELL/apps/baranes/_estables/baranes_calcul.html) i l'obre aquí, adaptat al mòbil. Sempre és la mateixa
@@ -20,6 +20,7 @@
   · Dropbox: la mateixa app que la Tresoreria Mòbil («PANELL Tresoreria Andreu», ntd7gdp1oqu7whl) i el mateix testimoni (tm.token).
   HISTÒRIA
     v1.0 (13/10/2026) — Primera versió.
+    v1.2 (13/10/2026) — Idiomes de l'informe lliures (també es pot treure el català o el castellà) · 👁 Portada amb ✕ Tancar visible.
     v1.1 (13/10/2026) — Informe: 👁 veure el complet o 📤 enviar la primera valoració (portada + resum de dades), amb idiomes a triar.
 ═══════════════════════════════════════════════════════════════════════════ -->
 <style>
@@ -172,25 +173,28 @@ h1{margin:0 0 2px; font-size:20px} .sub{color:var(--muted); font-size:13px} p{ma
        («Estudi de càlculs»: portada + resum de dades al dors, 2 fulls), amb els idiomes triats. Res s'arxiva. ── */
   D.modeInforme = 'envia';
   D.opcionsInforme = function(k){ var NOMS_IDIOMA = k.noms;
-    var N = DB.norms[S.norm] || {}, fixos = ['ca', N.lang || 'ca'], tots = ['ca','es','fr','en','it','de','pt'];
+    var N = DB.norms[S.norm] || {}, tots = ['ca','es','fr','en','it','de','pt'];
+    var per = ['ca'].concat(N.lang && N.lang !== 'ca' ? [N.lang] : []).concat((S.idiomesExtra || []).filter(function(l){ return l !== 'ca' && l !== N.lang; }));
+    var tria = per; try{ var g = JSON.parse(localStorage.getItem('cm.idiomes') || 'null'); if(Array.isArray(g) && g.length) tria = g; }catch(e){}
     var c = document.createElement('div'); c.className = 'tm-full';
     c.innerHTML = '<div class="tm-caixa"><b>📄 Informe</b>' +
-      '<div class="tm-sub">Idiomes · sempre: ' + fixos.filter(function(l, k){ return fixos.indexOf(l) === k; }).map(function(l){ return NOMS_IDIOMA[l]; }).join(' + ') + '. Afegeix-ne si cal:</div><div class="tm-idiomes">' +
-      tots.map(function(l){ var fix = fixos.indexOf(l) >= 0, on = fix || (S.idiomesExtra || []).indexOf(l) >= 0;
-        return '<label><input type="checkbox" data-l="' + l + '"' + (on ? ' checked' : '') + (fix ? ' disabled' : '') + '> ' + NOMS_IDIOMA[l] + '</label>'; }).join('') + '</div>' +
-      '<div class="tm-botons tm-col"><button data-a="envia" class="tm-prin">📤 Enviar la primera valoració<br><small>estudi de càlculs · portada + resum de dades (2 fulls)</small></button>' +
+      '<div class="tm-sub">Idiomes: marca els que vulguis (un o més).</div><div class="tm-idiomes">' +
+      tots.map(function(l){ return '<label><input type="checkbox" data-l="' + l + '"' + (tria.indexOf(l) >= 0 ? ' checked' : '') + '> ' + NOMS_IDIOMA[l] + '</label>'; }).join('') + '</div>' +
+      '<div class="tm-sub tm-avis" style="display:none;color:#b42318">Marca almenys un idioma.</div>' +
+      '<div class="tm-botons tm-col"><button data-a="envia" class="tm-prin">📤 Enviar la primera valoració<br><small>estudi de càlculs · portada + resum de dades (2 fulls per idioma)</small></button>' +
       '<button data-a="veu">👁 Veure l\'informe complet<br><small>tot: estudi del vidre + càlculs + informe general + annex</small></button>' +
       '<button data-a="tanca">Cancel·lar</button></div></div>';
     document.body.appendChild(c);
     c.addEventListener('click', function(ev){ var b = ev.target.closest && ev.target.closest('button'); var a = b && b.getAttribute('data-a'); if(!a) return;
       if(a === 'tanca'){ c.remove(); return; }
-      S.idiomesExtra = [].slice.call(c.querySelectorAll('input[data-l]')).filter(function(x){ return x.checked && !x.disabled; }).map(function(x){ return x.getAttribute('data-l'); });
-      c.remove(); D.modeInforme = a;
+      var idi = [].slice.call(c.querySelectorAll('input[data-l]')).filter(function(x){ return x.checked; }).map(function(x){ return x.getAttribute('data-l'); });
+      if(!idi.length){ c.querySelector('.tm-avis').style.display = ''; return; }
+      try{ localStorage.setItem('cm.idiomes', JSON.stringify(idi)); }catch(e){}
+      c.remove(); D.modeInforme = a; window.TM_IDIOMES = idi;
       var tip = a === 'envia' ? 'calculs' : 'tot', abans = S.tipusInforme || 'tot';
       k.aplica(tip);
-      if(k.brut) k.brut();
       Promise.resolve(k.genera()).catch(function(e){ alert('⚠ No s\'ha pogut fer l\'informe: ' + (e && e.message || e)); })
-        .then(function(){ k.aplica(abans); });
+        .then(function(){ k.aplica(abans); window.TM_IDIOMES = null; });
     });
   };
   D.informe = function(nom, bytes){
@@ -295,9 +299,17 @@ main > section.tm-on{ display:block; }
 .tm-botons.tm-col{ flex-direction:column; align-items:stretch; }
 .tm-botons.tm-col button{ text-align:left; padding:11px 14px; }
 .tm-botons.tm-col small{ font-weight:400; opacity:.8; }
+/* v1.2 · 👁 Portada: a pantalla completa i amb ✕ Tancar sempre visible */
+#prevPortada{ inset:0 !important; border:0 !important; z-index:2147483000 !important; }
+#prevPortada > div:first-child > b{ display:none !important; }
+#prevPortada > div:first-child{ flex-wrap:wrap !important; row-gap:6px; position:sticky; top:0; z-index:2; }
+#prevPortada > div:first-child > span{ display:none !important; }
+#prevPortada > div:first-child button{ font-size:14px !important; padding:7px 10px !important; }
+#prevPortadaTanca{ order:-1; background:#b42318 !important; color:#fff !important; border-color:#b42318 !important; font-weight:700 !important; }
+#prevPortadaCos{ overflow:auto !important; -webkit-overflow-scrolling:touch; justify-content:safe center !important; }
 </script>
 <script>
-var APP_VERSION='v1.1';
+var APP_VERSION='v1.2';
 var APP_KEY_DEFECTE='ntd7gdp1oqu7whl', ARREL_DEFECTE='/PANELL', USUARIS_PERMESOS=['andreuplanes@gmail.com'];
 var CAMI_APP='apps/baranes/_estables/baranes_calcul.html';
 function $(id){ return document.getElementById(id); }
@@ -350,6 +362,12 @@ function adapta(html){
   var i=html.indexOf('  let desat=false, sensePro=false;'), j=html.indexOf("let ultimInforme='';");
   if(i<0 || j<0 || j<i || j-i>6000) falten.push('informe');
   else html=html.slice(0,i)+"  window.TMDBX.informe(fitxer, inf.bytes);   /* CÀLCUL MÒBIL: no s'arxiva; s'obre o s'envia */\n}\n"+html.slice(j);
+  /* v1.2: idiomes lliures al mòbil (window.TM_IDIOMES = la llista triada; si no n'hi ha, com a l'ordinador) */
+  (function(){ var I="const idi=['ca'].concat(N.lang&&N.lang!=='ca'?[N.lang]:[]).concat((S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang));";
+    var n=html.split(I).length-1; if(n<1){ falten.push('idiomes ('+n+')'); return; }
+    html=html.split(I).join("const idi=window.TM_IDIOMES||(['ca'].concat(N.lang&&N.lang!=='ca'?[N.lang]:[]).concat((S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang)));"); })();
+  rep("const fulls=joc('ca');\n  if(N.lang&&N.lang!=='ca') fulls.push(...joc(N.lang));", "const fulls=window.TM_IDIOMES?[].concat(...window.TM_IDIOMES.map(l=>joc(l))):joc('ca');\n  if(!window.TM_IDIOMES&&N.lang&&N.lang!=='ca') fulls.push(...joc(N.lang));");
+  rep("const extra=(S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang);\n  extra.forEach(", "const extra=window.TM_IDIOMES?[]:(S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang);\n  extra.forEach(");
   /* la capa de Dropbox i l'estil del mòbil, abans del nucli */
   var k=html.indexOf('<script>\n/*==== PANELL NUCLI');
   if(k<0) falten.push('nucli');
