@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Càlcul">
 <meta name="theme-color" content="#1f3a2e"><meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
-<title>Càlcul Mòbil · v1.6</title>
+<title>Càlcul Mòbil · v1.7</title>
 <!-- ═══════════════════════════════════════════════════════════════════════════
-  PANELL · CÀLCUL MÒBIL · v1.6 (13/10/2026) · ENTRADA
+  PANELL · CÀLCUL MÒBIL · v1.7 (13/10/2026) · ENTRADA
   · El Càlcul de Baranes del PANELL a l'iPhone, per a CÀLCULS PROVISIONALS a peu d'obra (Andreu, 13/10/2026).
   · PRIVAT: aquesta pàgina (pública a GitHub) NO porta el Càlcul. Després de connectar amb Dropbox (compte de l'Andreu), LLEGEIX el Càlcul
     de PATRIMONI del PANELL (/PANELL/apps/baranes/_estables/baranes_calcul.html) i l'obre aquí, adaptat al mòbil. Sempre és la mateixa
@@ -20,6 +20,7 @@
   · Dropbox: la mateixa app que la Tresoreria Mòbil («PANELL Tresoreria Andreu», ntd7gdp1oqu7whl) i el mateix testimoni (tm.token).
   HISTÒRIA
     v1.0 (13/10/2026) — Primera versió.
+    v1.7 (13/10/2026) — Preparat per al Càlcul nou (z92, idiomesInforme()): s'hi adapta igual que a l'actual de patrimoni.
     v1.6 (13/10/2026) — Visor de PDF dins de l'app (pdf.js al costat: pdf.min.js + pdf.worker.min.js); abans s'obria fora i l'iPhone tancava l'app.
     v1.5 (13/10/2026) — Nom de la primera valoració: es proposa (etiqueta · perfil · muntatge · fixació · vidre · alçada) i es pot canviar; si ja n'hi ha una amb el mateix nom, pregunta (nova / substituir / no desar). 🗄 Arxivar: les valoracions amb casella pròpia.
     v1.4 (13/10/2026) — La primera valoració (la que s'envia) es desa a CALCULS PROVISIONALS/CALCUL/ (un PDF per càlcul, se substitueix); 🗄 Arxivar se l'emporta amb el càlcul.
@@ -411,7 +412,7 @@ main > section.tm-on{ display:block; }
 .tm-pdf .tm-sub{ color:#e5e7eb; }
 </script>
 <script>
-var APP_VERSION='v1.6';
+var APP_VERSION='v1.7';
 var APP_KEY_DEFECTE='ntd7gdp1oqu7whl', ARREL_DEFECTE='/PANELL', USUARIS_PERMESOS=['andreuplanes@gmail.com'];
 var CAMI_APP='apps/baranes/_estables/baranes_calcul.html';
 function $(id){ return document.getElementById(id); }
@@ -464,12 +465,14 @@ function adapta(html){
   var i=html.indexOf('  let desat=false, sensePro=false;'), j=html.indexOf("let ultimInforme='';");
   if(i<0 || j<0 || j<i || j-i>6000) falten.push('informe');
   else html=html.slice(0,i)+"  window.TMDBX.informe(fitxer, inf.bytes);   /* CÀLCUL MÒBIL: no s'arxiva; s'obre o s'envia */\n}\n"+html.slice(j);
-  /* v1.2: idiomes lliures al mòbil (window.TM_IDIOMES = la llista triada; si no n'hi ha, com a l'ordinador) */
-  (function(){ var I="const idi=['ca'].concat(N.lang&&N.lang!=='ca'?[N.lang]:[]).concat((S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang));";
+  /* v1.2: idiomes lliures al mòbil (window.TM_IDIOMES = la llista triada; si no n'hi ha, com a l'ordinador)
+     v1.7: el Càlcul z92 (cuina) ja té idiomesInforme(): llavors només cal que aquesta funció torni la tria del mòbil */
+  if(html.split('function idiomesInforme(){').length-1===1) html=html.replace('function idiomesInforme(){', function(){ return 'function idiomesInforme(){ if(window.TM_IDIOMES) return window.TM_IDIOMES.slice();'; });
+  else { (function(){ var I="const idi=['ca'].concat(N.lang&&N.lang!=='ca'?[N.lang]:[]).concat((S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang));";
     var n=html.split(I).length-1; if(n<1){ falten.push('idiomes ('+n+')'); return; }
     html=html.split(I).join("const idi=window.TM_IDIOMES||(['ca'].concat(N.lang&&N.lang!=='ca'?[N.lang]:[]).concat((S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang)));"); })();
   rep("const fulls=joc('ca');\n  if(N.lang&&N.lang!=='ca') fulls.push(...joc(N.lang));", "const fulls=window.TM_IDIOMES?[].concat(...window.TM_IDIOMES.map(l=>joc(l))):joc('ca');\n  if(!window.TM_IDIOMES&&N.lang&&N.lang!=='ca') fulls.push(...joc(N.lang));");
-  rep("const extra=(S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang);\n  extra.forEach(", "const extra=window.TM_IDIOMES?[]:(S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang);\n  extra.forEach(");
+  rep("const extra=(S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang);\n  extra.forEach(", "const extra=window.TM_IDIOMES?[]:(S.idiomesExtra||[]).filter(l=>I18N[l]&&l!=='ca'&&l!==N.lang);\n  extra.forEach("); }
   /* la capa de Dropbox i l'estil del mòbil, abans del nucli */
   var k=html.indexOf('<script>\n/*==== PANELL NUCLI');
   if(k<0) falten.push('nucli');
